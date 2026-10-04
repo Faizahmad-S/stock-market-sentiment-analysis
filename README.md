@@ -44,8 +44,6 @@ stock-market-sentiment-analysis/
 ├── reports/
 │   └── MSc_Dissertation.pdf
 ├── results/                  # Model outputs (CSVs, reports)
-├── .github/workflows/
-│   └── scrape.yml            # Daily scraping workflow
 ├── requirements.txt
 ├── LICENSE
 └── README.md
@@ -56,8 +54,8 @@ stock-market-sentiment-analysis/
 ### 1. Clone and install
 
 ```bash
-git clone https://github.com/Faizahmad-S/stock-market-Sentiment-analysis.git
-cd stock-market-Sentiment-analysis
+git clone https://github.com/Faizahmad-S/stock-market-sentiment-analysis.git
+cd stock-market-sentiment-analysis
 python -m venv .venv
 source .venv/bin/activate    # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
@@ -118,10 +116,36 @@ print(textblob_result)
 
 ## Daily scraping via GitHub Actions
 
-The workflow at `.github/workflows/scrape.yml` runs the scraper every day at
-11:00 UTC and commits the new CSV back to the repository. Enable **Read and
-write permissions** for workflows under *Settings → Actions → General* to
-allow the commit step to succeed.
+During the dissertation, the scraper ran on a daily GitHub Actions schedule
+(11:00 UTC) and committed each new CSV back to the repository. The workflow
+file is not included here, so the repository does not keep scraping. To
+re-enable it, add `.github/workflows/scrape.yml`:
+
+```yaml
+name: Daily scrape
+on:
+  schedule:
+    - cron: "0 11 * * *"
+  workflow_dispatch:
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt
+      - run: python -m src.scraper --tickers AAPL AMZN GOOG WMT
+      - run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add data/raw
+          git commit -m "Daily scrape" || echo "No changes"
+          git push
+```
 
 ## Results reproduced from the dissertation
 
